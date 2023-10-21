@@ -14,6 +14,7 @@ app.set("views", path.join(__dirname, "/client/views"));
 app.use(express.static(__dirname + '/client/public'));
 
 let connections: any = {};
+let world: any = {};
 
 const sendServerMessage = (r: number, g: number, b: number, message: string) => {
     sio.emit("systemMessage", { r, g, b, message });
@@ -41,10 +42,29 @@ sio.on("connection", (io: any) => {
         sio.emit("chatMessage", data);
     });
 
+    io.on("clientDraw", (data: any) => {
+        if (world[io.id])
+            if (world[io.id][data.id]) world[io.id][data.id].d.push({ x: data.x, y: data.y });
+            else world[io.id][data.id] = {
+                id: data.id,
+                r: data.r,
+                g: data.g,
+                b: data.b,
+                d: [{ x: data.x, y: data.y }]
+            };
+        else world[io.id] = [];
+        console.log(world)
+    });
+
+    io.on("clientDiscover", () => {
+        io.emit("serverDiscover", world);
+    });
+
     io.on("disconnect", () => {
         sendServerMessage(200, 0, 0, `${connections[io.id].n.length > 0 ? connections[io.id].n : "Guest"} left the game.`);
         console.log(`❌ Session ${io.id} ended!`);
         delete connections[io.id];
+        delete world[io.id];
     });
 });
 

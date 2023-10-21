@@ -6,6 +6,7 @@ const ctx = canvas.getContext("2d");
 const PLAYER_SPEED = 5;
 const PLAYER_SIZE = 25;
 const PLAYER_LINE_RADIUS = screen.height / 4;
+const PLAYER_DRAW_WIDTH = 5;
 const CHAT_DURATION = 30; // seconds
 
 // Global default player variables
@@ -23,6 +24,10 @@ if (localStorage.getItem("username")) document.getElementById("n").value = local
 // Set color picker to random color
 document.getElementById("rgb").value = `#${Math.floor(r).toString(16)}${Math.floor(g).toString(16)}${Math.floor(b).toString(16)}`;
 
+// Create a world variable for storing the world (drawings, etc.)
+let world = {};
+let coloredPaths = false;
+
 // Global default client variables
 let coff_x = 0; // camera offset
 let coff_y = 0; // camera offset
@@ -32,11 +37,14 @@ let up = false;
 let down = false;
 let left = false;
 let right = false;
+let showTouchControls = "ontouchstart" in document.documentElement;
 document.addEventListener("keydown", (event) => {
     if (event.key === "w") up = true;
     if (event.key === "s") down = true;
     if (event.key === "a") left = true;
     if (event.key === "d") right = true;
+    if (event.key === "t") showTouchControls = !showTouchControls;
+    if (event.key === "c") coloredPaths = !coloredPaths;
 }, false);
 document.addEventListener("keyup", (event) => {
     if (event.key === "w") up = false;
@@ -44,21 +52,15 @@ document.addEventListener("keyup", (event) => {
     if (event.key === "a") left = false;
     if (event.key === "d") right = false;
 }, false);
-const TouchControl = (event) => {
-    const touch = event.touches[0];
-    if (touch.clientY < window.innerHeight / 3) up = true;
-    if (touch.clientY > window.innerHeight - window.innerHeight / 3) down = true;
-    if (touch.clientX < window.innerWidth / 3) left = true;
-    if (touch.clientX > window.innerWidth - window.innerWidth / 3) right = true;
-}
-document.addEventListener("touchstart", TouchControl, false);
-document.addEventListener("touchmove", TouchControl, false);
-document.addEventListener("touchend", (event) => {
-    up = false;
-    down = false;
-    left = false;
-    right = false;
-}, false);
+// Touch control
+document.getElementById("up").addEventListener("touchstart", () => up = true, false);
+document.getElementById("up").addEventListener("touchend", () => up = false, false);
+document.getElementById("down").addEventListener("touchstart", () => down = true, false);
+document.getElementById("down").addEventListener("touchend", () => down = false, false);
+document.getElementById("left").addEventListener("touchstart", () => left = true, false);
+document.getElementById("left").addEventListener("touchend", () => left = false, false);
+document.getElementById("right").addEventListener("touchstart", () => right = true, false);
+document.getElementById("right").addEventListener("touchend", () => right = false, false);
 document.addEventListener('contextmenu', event => event.preventDefault());
 
 const IsMe = (_n, _x, _y) => {
@@ -75,11 +77,26 @@ const MoveTowards = (x1, y1, x2, y2, step) => {
 }
 
 socket.on("serverUpdate", (connections) => {
-    // Update the canvas size
-    ctx.canvas.width = window.innerWidth;
-    ctx.canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Draw world
+    ctx.lineWidth = PLAYER_DRAW_WIDTH;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    for (const id in world) {
+        for (const path of world[id]) {
+            ctx.beginPath();
+            if (coloredPaths) ctx.strokeStyle = `rgb(${path.r}, ${path.g}, ${path.b})`;
+            else ctx.strokeStyle = "black";
+            for (const data of path.d) {
+                ctx.lineTo(data.x - coff_x, data.y - coff_y);
+            }
+            ctx.stroke();
+            ctx.closePath();
+        }
+    }
     // Draw all the connections
     for (const id in connections) {
         const connection = connections[id];
@@ -92,6 +109,7 @@ socket.on("serverUpdate", (connections) => {
             ctx.moveTo(lineStart.x, lineStart.y);
             ctx.lineTo(connection.x - coff_x + PLAYER_SIZE / 2, connection.y - coff_y + PLAYER_SIZE / 2);
             ctx.strokeStyle = `rgb(${connection.r}, ${connection.g}, ${connection.b})`;
+            ctx.lineWidth = 2;
             ctx.stroke();
             ctx.closePath();
         } else {
@@ -138,12 +156,16 @@ const UpdatePlayerValues = () => {
         document.getElementById("m").innerHTML = m;
         document.getElementById("x").innerText = x;
         document.getElementById("y").innerText = y;
+        // Update touch controls
+        if (showTouchControls) document.getElementById("mobile").style.display = "flex";
+        else document.getElementById("mobile").style.display = "none";
     } catch (e) { }
 }
 
 const GameLoop = () => {
     UpdatePlayerValues();
     SendToServer();
+    socket.emit("clientDiscover"); // Discover the world
     requestAnimationFrame(GameLoop);
 }
 // Initial call to the game loop
@@ -184,4 +206,43 @@ socket.on("systemMessage", (data) => {
     span.style.color = `rgb(${data.r}, ${data.g}, ${data.b})`;
     span.innerText = data.message;
     displayGenericChatMessage(span);
+});
+
+// Draw on canvas
+let drawing = false;
+let pathId = 0;
+
+canvas.addEventListener('mousedown', () => drawing = true, false);
+canvas.addEventListener('touchstart', () => drawing = true, false);
+
+const DrawEnd = () => {
+    drawing = false;
+    pathId++;
+}
+canvas.addEventListener('mouseup', () => DrawEnd(), false);
+canvas.addEventListener('touchend', () => DrawEnd(), false);
+
+canvas.addEventListener('mousemove', (event) => {
+    if (!drawing) return;
+    const data = {
+        id: pathId,
+        r, g, b,
+        x: event.clientX + coff_x,
+        y: event.clientY + coff_y
+    }
+    socket.emit('clientDraw', data);
+}, false);
+canvas.addEventListener('touchmove', (event) => {
+    if (!drawing) return;
+    const data = {
+        id: pathId,
+        r, g, b,
+        x: event.touches[0].clientX + coff_x,
+        y: event.touches[0].clientY + coff_y
+    }
+    socket.emit('clientDraw', data);
+}, false);
+
+socket.on("serverDiscover", (data) => {
+    world = data;
 });
