@@ -5,6 +5,7 @@ const ctx = canvas.getContext("2d");
 // Global constants
 const PLAYER_SPEED = 5;
 const PLAYER_SIZE = 25;
+const PLAYER_LINE_RADIUS = screen.height / 4;
 const CHAT_DURATION = 30; // seconds
 
 // Global default player variables
@@ -64,6 +65,15 @@ const IsMe = (_n, _x, _y) => {
     return _n === n && _x === x && _y === y;
 }
 
+const MoveTowards = (x1, y1, x2, y2, step) => {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const angle = Math.atan2(dy, dx);
+    const x = x1 + step * Math.cos(angle);
+    const y = y1 + step * Math.sin(angle);
+    return { x, y };
+}
+
 socket.on("serverUpdate", (connections) => {
     // Update the canvas size
     ctx.canvas.width = window.innerWidth;
@@ -74,16 +84,29 @@ socket.on("serverUpdate", (connections) => {
     for (const id in connections) {
         const connection = connections[id];
         // Draw the player
-        ctx.fillStyle = `rgb(${connection.r}, ${connection.g}, ${connection.b})`;
-        ctx.fillRect(connection.x - coff_x, connection.y - coff_y, PLAYER_SIZE, PLAYER_SIZE);
-        // Draw the player name
-        ctx.font = "15px monospace";
-        ctx.fillStyle = "black";
-        ctx.textAlign = "center";
-        if (IsMe(connection.n, connection.x, connection.y)) ctx.fillStyle = "green";
-        if (connection.n.length < 1) connection.n = "Guest";
-        if (connection.n.length > 20) connection.n = `${connection.n.substring(0, 17)}...`;
-        ctx.fillText(connection.n, connection.x - coff_x + PLAYER_SIZE / 2, connection.y - coff_y - 5);
+        if (connection.x - coff_x < 0 || connection.x - coff_x > window.innerWidth || connection.y - coff_y < 0 || connection.y - coff_y > window.innerHeight) {
+            // Draw line to player when they are off screen
+            let lineStart = MoveTowards(x - coff_x + PLAYER_SIZE / 2, y - coff_y + PLAYER_SIZE / 2,
+                connection.x - coff_x + PLAYER_SIZE / 2, connection.y - coff_y + PLAYER_SIZE / 2, PLAYER_LINE_RADIUS);
+            ctx.beginPath();
+            ctx.moveTo(lineStart.x, lineStart.y);
+            ctx.lineTo(connection.x - coff_x + PLAYER_SIZE / 2, connection.y - coff_y + PLAYER_SIZE / 2);
+            ctx.strokeStyle = `rgb(${connection.r}, ${connection.g}, ${connection.b})`;
+            ctx.stroke();
+            ctx.closePath();
+        } else {
+            // Draw player rectangle
+            ctx.fillStyle = `rgb(${connection.r}, ${connection.g}, ${connection.b})`;
+            ctx.fillRect(connection.x - coff_x, connection.y - coff_y, PLAYER_SIZE, PLAYER_SIZE);
+            // Draw the player name
+            ctx.font = "15px monospace";
+            ctx.fillStyle = "black";
+            ctx.textAlign = "center";
+            if (IsMe(connection.n, connection.x, connection.y)) ctx.fillStyle = "green";
+            if (connection.n.length < 1) connection.n = "Guest";
+            if (connection.n.length > 20) connection.n = `${connection.n.substring(0, 17)}...`;
+            ctx.fillText(connection.n, connection.x - coff_x + PLAYER_SIZE / 2, connection.y - coff_y - 5);
+        }
     }
 });
 
