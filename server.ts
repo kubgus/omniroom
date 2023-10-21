@@ -1,6 +1,6 @@
-import express from "express";
-import { Server } from "socket.io";
-import path from "path";
+const express = require("express");
+const { Server } = require("socket.io");
+const path = require("path");
 
 const port = process.env.PORT || 8080;
 
@@ -15,14 +15,14 @@ app.use(express.static(__dirname + '/client/public'));
 
 let connections: any = {};
 
-sio.on("connection", (io) => {
+sio.on("connection", (io: any) => {
     console.log(`🤖 Session ${io.id} started!`);
     connections[io.id] = {
         x: 0, y: 0,
         r: 255, g: 0, b: 0
     };
 
-    io.on("clientUpdate", (data) => {
+    io.on("clientUpdate", (data: any) => {
         connections[io.id] = data;
         io.emit("serverUpdate", connections);
     });
@@ -33,4 +33,4 @@ sio.on("connection", (io) => {
     });
 });
 
-app.get("/", (req, res) => { res.render("index.ejs") });
+app.get("/", (req: any, res: any) => { res.render("index.ejs") });
