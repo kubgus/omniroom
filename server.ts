@@ -27,6 +27,10 @@ sio.on("connection", (io: any) => {
         io.emit("serverUpdate", connections);
     });
 
+    io.on("chatMessage", (data: any) => {
+        sio.emit("chatMessage", data);
+    });
+
     io.on("disconnect", () => {
         console.log(`❌ Session ${io.id} ended!`);
         delete connections[io.id];

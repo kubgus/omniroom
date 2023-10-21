@@ -7,15 +7,66 @@ body {
     font-family: monospace;
 }
 
-#hud {
+.ui {
     position: absolute;
+    padding: 5px;
+    display: flex;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+#hud {
     top: 0;
     left: 0;
     width: 100%;
     height: 20px;
-    padding: 5px;
-    display: flex;
     flex-direction: row;
     justify-content: space-evenly;
-    background: rgba(0, 0, 0, 0.1);
+}
+
+#settings {
+    bottom: 0;
+    left: 0;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#chat {
+    width: 25%;
+    bottom: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#chat div {
+    display: flex;
+    gap: 5px;
+}
+
+#chat #messages {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 5px;
+    overflow-y: hidden;
+    max-height: 50vh;
+    line-break: anywhere;
+}
+
+#chat input {
+    width: 100%;
+}
+
+input[type="color"] {
+    border: solid 1px black;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none;
 }

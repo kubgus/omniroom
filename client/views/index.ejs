@@ -15,9 +15,20 @@
 </head>
 
 <body>
-    <section id="hud">
+    <section class="ui" id="hud">
         <span>X: <span id="x"></span></span>
         <span>Y: <span id="y"></span></span>
+    </section>
+    <section class="ui" id="settings">
+        <span>Name: <input type="text" id="n"></span>
+        <span>Color: <input type="color" id="rgb"></span>
+    </section>
+    <section class="ui" id="chat">
+        <div id="messages"></div>
+        <div>
+            <input type="text" id="message">
+            <button id="send">Send</button>
+        </div>
     </section>
     <canvas id="game"></canvas>
 </body>
