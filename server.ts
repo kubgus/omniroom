@@ -43,16 +43,15 @@ sio.on("connection", (io: any) => {
     });
 
     io.on("clientDraw", (data: any) => {
-        if (world[io.id])
-            if (world[io.id][data.id]) world[io.id][data.id].d.push({ x: data.x, y: data.y });
-            else world[io.id][data.id] = {
-                id: data.id,
-                r: data.r,
-                g: data.g,
-                b: data.b,
-                d: [{ x: data.x, y: data.y }]
-            };
-        else world[io.id] = [];
+        if (!world[io.id]) world[io.id] = [];
+        if (world[io.id][data.id]) world[io.id][data.id].d.push({ x: data.x, y: data.y });
+        else world[io.id][data.id] = {
+            id: data.id,
+            r: data.r,
+            g: data.g,
+            b: data.b,
+            d: [{ x: data.x, y: data.y }]
+        };
     });
 
     io.on("clientDiscover", () => {

@@ -90,9 +90,11 @@ socket.on("serverUpdate", (connections) => {
             ctx.beginPath();
             if (coloredPaths) ctx.strokeStyle = `rgb(${path.r}, ${path.g}, ${path.b})`;
             else ctx.strokeStyle = "black";
-            for (const data of path.d) {
-                ctx.lineTo(data.x - coff_x, data.y - coff_y);
-            }
+            try { // Added because of a bug
+                for (const data of path.d) {
+                    ctx.lineTo(data.x - coff_x, data.y - coff_y);
+                }
+            } catch (e) { }
             ctx.stroke();
             ctx.closePath();
         }
@@ -213,7 +215,10 @@ let drawing = false;
 let pathId = 0;
 
 canvas.addEventListener('mousedown', () => drawing = true, false);
-canvas.addEventListener('touchstart', () => drawing = true, false);
+canvas.addEventListener('touchstart', (event) => {
+    drawing = true;
+    event.preventDefault();
+}, false);
 
 const DrawEnd = () => {
     drawing = false;
