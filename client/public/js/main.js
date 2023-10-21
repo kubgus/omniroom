@@ -51,6 +51,7 @@ document.addEventListener("touchend", (event) => {
     right = false;
 }, false);
 document.addEventListener('contextmenu', event => event.preventDefault());
+document.addEventListener('mousedown', event => event.preventDefault());
 
 socket.on("serverUpdate", (connections) => {
     // Update the canvas size
