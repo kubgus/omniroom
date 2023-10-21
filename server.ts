@@ -53,7 +53,6 @@ sio.on("connection", (io: any) => {
                 d: [{ x: data.x, y: data.y }]
             };
         else world[io.id] = [];
-        console.log(world)
     });
 
     io.on("clientDiscover", () => {
