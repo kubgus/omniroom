@@ -9,6 +9,8 @@ const CHAT_DURATION = 30; // seconds
 
 // Global default player variables
 let n = "";
+let h = 100; // health
+let m = 0; // money
 let x = 0;
 let y = 0;
 let r = Math.random() * 255;
@@ -109,6 +111,8 @@ const UpdatePlayerValues = () => {
         g = parseInt(document.getElementById("rgb").value.substring(3, 5), 16);
         b = parseInt(document.getElementById("rgb").value.substring(5, 7), 16);
         // Update HUD info
+        document.getElementById("h").innerHTML = h;
+        document.getElementById("m").innerHTML = m;
         document.getElementById("x").innerText = x;
         document.getElementById("y").innerText = y;
     } catch (e) { }
