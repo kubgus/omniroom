@@ -15,15 +15,25 @@ app.use(express.static(__dirname + '/client/public'));
 
 let connections: any = {};
 
+const sendServerMessage = (r: number, g: number, b: number, message: string) => {
+    sio.emit("systemMessage", { r, g, b, message });
+}
+
 sio.on("connection", (io: any) => {
     console.log(`🤖 Session ${io.id} started!`);
     connections[io.id] = {
-        x: 0, y: 0,
-        r: 255, g: 0, b: 0
+        n: "", x: 0, y: 0,
+        r: 0, g: 0, b: 0
     };
+
+    let joinMessageSent = false;
 
     io.on("clientUpdate", (data: any) => {
         connections[io.id] = data;
+        if (!joinMessageSent) {
+            joinMessageSent = true;
+            sendServerMessage(0, 200, 0, `${connections[io.id].n.length > 0 ? connections[io.id].n : "Guest"} joined the game.`);
+        }
         io.emit("serverUpdate", connections);
     });
 
@@ -32,6 +42,7 @@ sio.on("connection", (io: any) => {
     });
 
     io.on("disconnect", () => {
+        sendServerMessage(200, 0, 0, `${connections[io.id].n.length > 0 ? connections[io.id].n : "Guest"} left the game.`);
         console.log(`❌ Session ${io.id} ended!`);
         delete connections[io.id];
     });

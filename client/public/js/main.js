@@ -132,11 +132,29 @@ document.addEventListener("keydown", (event) => {
 }, false);
 document.getElementById("send").addEventListener("click", SendChatMessage, false);
 
-socket.on("chatMessage", (data) => {
-    const span = document.createElement("span");
-    span.innerHTML = `<span style="color: rgb(${data.r}, ${data.g}, ${data.b});">${data.n}:</span> ${data.message}`;
+const displayGenericChatMessage = (span) => {
     document.getElementById("messages").insertBefore(span, document.getElementById("messages").firstChild);
-    setTimeout(() => {
+    return setTimeout(() => {
         span.remove();
     }, CHAT_DURATION * 1000);
+}
+
+socket.on("chatMessage", (data) => {
+    const username = document.createElement("span");
+    username.style.color = `rgb(${data.r}, ${data.g}, ${data.b})`;
+    username.innerText = data.n;
+    const message = document.createElement("span");
+    message.innerText = data.message;
+    const span = document.createElement("span");
+    span.appendChild(username);
+    span.appendChild(document.createTextNode(": "));
+    span.appendChild(message);
+    displayGenericChatMessage(span);
+});
+
+socket.on("systemMessage", (data) => {
+    const span = document.createElement("span");
+    span.style.color = `rgb(${data.r}, ${data.g}, ${data.b})`;
+    span.innerText = data.message;
+    displayGenericChatMessage(span);
 });
