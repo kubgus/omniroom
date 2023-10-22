@@ -25,7 +25,8 @@ if (localStorage.getItem("username")) document.getElementById("n").value = local
 document.getElementById("rgb").value = `#${Math.floor(r).toString(16)}${Math.floor(g).toString(16)}${Math.floor(b).toString(16)}`;
 
 // Create a world variable for storing the world (drawings, etc.)
-let world = {};
+let world = []; // list of paths of this user
+let globe = {}; // list of paths of all users exccpet the current user
 let coloredPaths = false;
 
 // Global default client variables
@@ -81,16 +82,19 @@ socket.on("serverUpdate", (connections) => {
     canvas.height = window.innerHeight;
     // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // Draw world
-    ctx.lineWidth = PLAYER_DRAW_WIDTH;
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    for (const id in world) {
-        for (const path of world[id]) {
+    // Draw all the connections
+    for (const id in connections) {
+        const connection = connections[id];
+        // Draw the player world modifications
+        ctx.lineWidth = PLAYER_DRAW_WIDTH;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        const paths = { ...globe, ...{ [socket.id]: world } };
+        for (const path of paths[id]) {
             ctx.beginPath();
             if (coloredPaths) ctx.strokeStyle = `rgb(${path.r}, ${path.g}, ${path.b})`;
             else ctx.strokeStyle = "black";
-            try { // Added because of a bug
+            try { // Prevent faulty paths from crashing the client
                 for (const data of path.d) {
                     ctx.lineTo(data.x - coff_x, data.y - coff_y);
                 }
@@ -98,10 +102,6 @@ socket.on("serverUpdate", (connections) => {
             ctx.stroke();
             ctx.closePath();
         }
-    }
-    // Draw all the connections
-    for (const id in connections) {
-        const connection = connections[id];
         // Draw the player
         if (connection.x - coff_x < 0 || connection.x - coff_x > window.innerWidth || connection.y - coff_y < 0 || connection.y - coff_y > window.innerHeight) {
             // Draw line to player when they are off screen
@@ -167,7 +167,9 @@ const UpdatePlayerValues = () => {
 const GameLoop = () => {
     UpdatePlayerValues();
     SendToServer();
-    socket.emit("clientDiscover"); // Discover the world
+
+    socket.emit("clientRequestWorld") // Request world from server
+
     requestAnimationFrame(GameLoop);
 }
 // Initial call to the game loop
@@ -227,27 +229,24 @@ const DrawEnd = () => {
 canvas.addEventListener('mouseup', () => DrawEnd(), false);
 canvas.addEventListener('touchend', () => DrawEnd(), false);
 
-canvas.addEventListener('mousemove', (event) => {
+const UpdateLocalWorld = (event) => {
     if (!drawing) return;
     const data = {
-        id: pathId,
-        r, g, b,
-        x: event.clientX + coff_x,
-        y: event.clientY + coff_y
-    }
-    socket.emit('clientDraw', data);
-}, false);
-canvas.addEventListener('touchmove', (event) => {
-    if (!drawing) return;
-    const data = {
-        id: pathId,
-        r, g, b,
-        x: event.touches[0].clientX + coff_x,
-        y: event.touches[0].clientY + coff_y
-    }
-    socket.emit('clientDraw', data);
-}, false);
+        x: (event.clientX ?? event.touches[0].clientX) + coff_x,
+        y: (event.clientY ?? event.touches[0].clientY) + coff_y,
 
-socket.on("serverDiscover", (data) => {
-    world = data;
+        r, g, b
+    }
+    if (world[pathId]) world[pathId].d.push({ x: data.x, y: data.y });
+    else world[pathId] = { d: [{ x: data.x, y: data.y }], r, g, b };
+}
+canvas.addEventListener('mousemove', UpdateLocalWorld, false);
+canvas.addEventListener('touchmove', UpdateLocalWorld, false);
+
+socket.on("serverRequestWorld", (recipient) => {
+    socket.emit("clientReturnWorld", { recipient, world });
+});
+
+socket.on("serverReturnWorld", (data) => {
+    globe[data.sender] = data.world;
 });
