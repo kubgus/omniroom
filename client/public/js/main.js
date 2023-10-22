@@ -40,6 +40,7 @@ let left = false;
 let right = false;
 let showTouchControls = "ontouchstart" in document.documentElement;
 document.addEventListener("keydown", (event) => {
+    if (document.activeElement.tagName === "INPUT") return; // Don't move if typing in input 
     if (event.key === "w") up = true;
     if (event.key === "s") down = true;
     if (event.key === "a") left = true;
@@ -92,14 +93,13 @@ socket.on("serverUpdate", (connections) => {
         const paths = { ...globe, ...{ [socket.id]: world } };
         if (paths[id])
             for (const path of paths[id]) {
+                if (path == null) continue;
                 ctx.beginPath();
                 if (coloredPaths) ctx.strokeStyle = `rgb(${path.r}, ${path.g}, ${path.b})`;
-                else ctx.strokeStyle = "black";
-                try { // Prevent faulty paths from crashing the client
-                    for (const data of path.d) {
-                        ctx.lineTo(data.x - coff_x, data.y - coff_y);
-                    }
-                } catch (e) { }
+                else ctx.strokeStyle = "lightgray";
+                for (const data of path.d) {
+                    ctx.lineTo(data.x - coff_x, data.y - coff_y);
+                }
                 ctx.stroke();
                 ctx.closePath();
             }
@@ -121,9 +121,9 @@ socket.on("serverUpdate", (connections) => {
             ctx.fillRect(connection.x - coff_x, connection.y - coff_y, PLAYER_SIZE, PLAYER_SIZE);
             // Draw the player name
             ctx.font = "15px monospace";
-            ctx.fillStyle = "black";
+            ctx.fillStyle = "white";
             ctx.textAlign = "center";
-            if (IsMe(connection.n, connection.x, connection.y)) ctx.fillStyle = "green";
+            //if (IsMe(connection.n, connection.x, connection.y)) ctx.fillStyle = "lime";
             if (connection.n.length < 1) connection.n = "Guest";
             if (connection.n.length > 20) connection.n = `${connection.n.substring(0, 17)}...`;
             ctx.fillText(connection.n, connection.x - coff_x + PLAYER_SIZE / 2, connection.y - coff_y - 5);
@@ -180,6 +180,8 @@ const SendChatMessage = (event) => {
     const message = document.getElementById("message").value;
     if (message.length > 0) socket.emit("chatMessage", { n, r, g, b, message });
     document.getElementById("message").value = "";
+    // Lose focus on input after sending message
+    document.getElementById("message").blur();
 }
 document.addEventListener("keydown", (event) => {
     if (event.key === "Enter") SendChatMessage();

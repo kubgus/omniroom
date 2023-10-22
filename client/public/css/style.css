@@ -5,6 +5,7 @@ body {
     margin: 0;
     overflow: hidden;
     font-family: monospace;
+    color: white;
 
     -webkit-touch-callout: none;
     -webkit-user-select: none;
@@ -14,11 +15,22 @@ body {
     user-select: none;
 }
 
+canvas {
+    background-color: rgb(38, 38, 38);
+    cursor: crosshair;
+}
+
+input,
+button {
+    background-color: rgb(168, 168, 168);
+    border-radius: 5px;
+}
+
 .ui {
     position: absolute;
-    padding: 5px;
+    padding: 6px;
     display: flex;
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 #hud {
@@ -35,13 +47,15 @@ body {
     left: 0;
     flex-direction: column;
     gap: 5px;
+    border-radius: 0 5px 0 0;
 }
 
 #mobile {
     bottom: 100px;
-    left: 0;
+    left: 10px;
     flex-direction: column;
     gap: 5px;
+    border-radius: 5px;
 }
 
 #mobile button {
@@ -50,11 +64,12 @@ body {
 }
 
 #chat {
-    width: 25%;
+    width: 35%;
     bottom: 0;
     right: 0;
     flex-direction: column;
     gap: 5px;
+    border-radius: 5px 0 0 0;
 }
 
 #chat div {
