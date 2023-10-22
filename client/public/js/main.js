@@ -90,18 +90,19 @@ socket.on("serverUpdate", (connections) => {
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
         const paths = { ...globe, ...{ [socket.id]: world } };
-        for (const path of paths[id]) {
-            ctx.beginPath();
-            if (coloredPaths) ctx.strokeStyle = `rgb(${path.r}, ${path.g}, ${path.b})`;
-            else ctx.strokeStyle = "black";
-            try { // Prevent faulty paths from crashing the client
-                for (const data of path.d) {
-                    ctx.lineTo(data.x - coff_x, data.y - coff_y);
-                }
-            } catch (e) { }
-            ctx.stroke();
-            ctx.closePath();
-        }
+        if (paths[id])
+            for (const path of paths[id]) {
+                ctx.beginPath();
+                if (coloredPaths) ctx.strokeStyle = `rgb(${path.r}, ${path.g}, ${path.b})`;
+                else ctx.strokeStyle = "black";
+                try { // Prevent faulty paths from crashing the client
+                    for (const data of path.d) {
+                        ctx.lineTo(data.x - coff_x, data.y - coff_y);
+                    }
+                } catch (e) { }
+                ctx.stroke();
+                ctx.closePath();
+            }
         // Draw the player
         if (connection.x - coff_x < 0 || connection.x - coff_x > window.innerWidth || connection.y - coff_y < 0 || connection.y - coff_y > window.innerHeight) {
             // Draw line to player when they are off screen
@@ -233,9 +234,7 @@ const UpdateLocalWorld = (event) => {
     if (!drawing) return;
     const data = {
         x: (event.clientX ?? event.touches[0].clientX) + coff_x,
-        y: (event.clientY ?? event.touches[0].clientY) + coff_y,
-
-        r, g, b
+        y: (event.clientY ?? event.touches[0].clientY) + coff_y
     }
     if (world[pathId]) world[pathId].d.push({ x: data.x, y: data.y });
     else world[pathId] = { d: [{ x: data.x, y: data.y }], r, g, b };
